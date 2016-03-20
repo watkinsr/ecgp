@@ -4,7 +4,7 @@ import java.util.Random;
 import java.util.Stack;
 
 public class Genome<T> {
-    static String[] funcs = {"-", "+", "*", "/"};
+    static String[] funcs = {"-", "+", "*", "/", "Math.sin"};
     static String[] terms = {"getX()", "getY()", "getVelocity()", "getGunHeading()", "getGunHeat()", "getHeading()"};
     public static final int MAX_DEPTH = 4;
     public static final int MIN_DEPTH = 2;
@@ -12,7 +12,7 @@ public class Genome<T> {
     public StringBuilder _pheno = new StringBuilder(" ");
     private Stack<String> stack = new Stack<String>();
     public TreeNode<String> tree;
-    private int terms_seen = 0, arity = 2,  prevArity = 0, TYPE_0 = 0, TYPE_1 = 1, TYPE_2 = 2, TYPE_3 = 3, TYPE_4 = 4, TYPE_5 = 5, prevLevel = 0;
+    private int terms_seen = 0, arity = 0, TYPE_0 = 0, TYPE_1 = 1, TYPE_2 = 2, TYPE_3 = 3, TYPE_4 = 4, TYPE_5 = 5, prevLevel = 0;
     public int TREE_DEPTH = 0;
     private String oneArityStr;
     private boolean recursedArityParent = false;
@@ -20,7 +20,7 @@ public class Genome<T> {
     public Genome() {
 	this.tree = new TreeNode<String>(func());
 	this.tree = Grow(this.tree);	 
-	this.tree.print();	
+	// this.tree.print();	
     }
 
     public StringBuilder GetPhenomeFromGenome () {
@@ -61,136 +61,133 @@ public class Genome<T> {
 
 
     private void addToPheno(String arg, int type) {
-		_pheno.append(arg);
-		System.out.println("Appended: " + arg + " [" + String.valueOf(type) + "]");
+	_pheno.append(arg);
+	System.out.println("Appended: " + arg + " [" + String.valueOf(type) + "]");
     }
 
     private void recursiveOneArity() {
-    	if (getArityOfString(stack.peek()) == 1) {
-    		oneArityStr = stack.pop() + "(" + oneArityStr + ")";
-    		recursedArityParent = true;
-    		recursiveOneArity();
-	    } 
+	if (getArityOfString(stack.peek()) == 1) {
+	    oneArityStr = stack.pop() + "(" + oneArityStr + ")";
+	    recursedArityParent = true;
+	    recursiveOneArity();
+	} 
     }
-    
+
+    private void handleUpBranch() {
+	if (arity == 1) {
+	    String operand = stack.pop(), operator = stack.pop();
+	    oneArityStr = operator + "(" + operand + ")";
+	    recursiveOneArity();
+	    addToPheno(oneArityStr, TYPE_0);
+	    arity = 0;
+	} else if (arity == 2) {
+	    String lOp = stack.pop(), rOp = stack.pop(), op = stack.pop();
+	    if (getArityOfString(stack.peek()) == 1) {
+		addToPheno(stack.pop() + "(" + lOp + " " + op + " " + rOp + ") ", TYPE_0);
+	    } else {
+		addToPheno(lOp + " " + op + " " + rOp + " ", TYPE_0);
+	    }
+	    arity = 0;
+	}
+	terms_seen = 0;
+	if (stack.size() > 0 && getArityOfString(stack.peek()) != 1) {// pop off parent
+	    addToPheno(stack.pop() + " ", TYPE_1);
+	    if (recursedArityParent && stack.size() > 0) {
+		addToPheno(stack.pop() + " ", TYPE_5); // Weird unary, need to pop 2nd child 
+		recursedArityParent = false;
+	    }
+    	}
+    }
+
+    private void termsOnStackWithNonTerm() {
+	try {
+	    if (arity == 1) { // Unary
+		String operand = stack.pop(), operator = stack.pop();
+		if (!isOperator(operand) && !isOperator(operator)) {
+		    stack.push(operand); stack.push(operator);
+		    throw new Exception("Expected an operator");
+		} else {
+		    addToPheno(operator + "(" + operand + ") ", TYPE_2);
+		    arity = 0; terms_seen = 0;
+		}
+	    } else { // Binary
+		String operator = null, operand = null;
+		if (terms_seen == 2) { 
+		    operator = stack.pop(); operand = stack.pop();
+		} else {
+		    operand = stack.pop(); operator = stack.pop();
+		}
+		if (!isOperator(operand) && !isOperator(operator)) {
+		    // addToPheno(operand + " ", TYPE_5);
+		    stack.push(operand); stack.push(operator);
+		    throw new Exception("Expected an operator");
+		} else {
+		    addToPheno(operand + " " + operator + " ", TYPE_2);
+		    arity = 0;
+		    terms_seen = 0;
+		}
+	    }
+	} catch( Exception e ) {
+	    System.out.println(e.getMessage());
+	    if (stack.size() == 1) { addToPheno(stack.pop(), TYPE_3); }
+	}
+
+    }
+
     private StringBuilder GenomeToPhenome() {
-		stack.clear();
-		Stack<String> _stack;
-		StringBuilder pheno;
-		terms_seen = 0;
-		prevArity = 0;
-		prevLevel =0;
-	
-		for (TreeNode<String> node : this.tree) {
-		    pheno = _pheno;
-		    _stack = stack;
-	
-		    // If we go back up a branch after recursion
-		    if (prevLevel > node.getLevel() && terms_seen == prevArity && stack.size() >= (1 + prevArity)) {
-				if (prevArity == 1) {
-				    String operand = stack.pop(), operator = stack.pop();
-				    oneArityStr = "";
-				    oneArityStr = operator + "(" + operand + ")";
-				    recursiveOneArity();
-				    addToPheno(oneArityStr, TYPE_0);
-				    prevArity = 0;
-				} else if (prevArity == 2) {
-				    String lOp = stack.pop(), rOp = stack.pop(), op = stack.pop();
-				    if (getArityOfString(stack.peek()) == 1) {
-				    	addToPheno(stack.pop() + "(" + lOp + " " + op + " " + rOp + ") ", TYPE_0);
-				    } else {
-				    	addToPheno(lOp + " " + op + " " + rOp + " ", TYPE_0);
-				    }
-				    prevArity = 0;
-				}
-				terms_seen = 0;
-				if (stack.size() > 0 && getArityOfString(stack.peek()) != 1) {// pop off parent
-				    addToPheno(stack.pop() + " ", TYPE_1);
-				    if (recursedArityParent && stack.size() > 0) {
-				    	addToPheno(stack.pop() + " ", TYPE_5); // Weird one arity stuff, need to pop second child 
-				    	recursedArityParent = false; 		   // after recursing out of one arity
-				    }
-				} else{
-					System.out.println("Huh?");
-				}
-		    } else if (terms_seen > 0 && isOperator(node.data)) { // If terminals on stack and we've now reached a non-terminal 
-		    	try {
-		    		if (terms_seen == 3) {
-		    			System.out.println("this is fucked");
-		    		}
-				    if (prevArity == 1) {
-						String operand = stack.pop(), operator = stack.pop();
-						if (!isOperator(operand) && !isOperator(operator)) {
-							// addToPheno(operand + " ", TYPE_5);
-							stack.push(operand);
-				    		stack.push(operator);
-				    		throw new Exception("Expected an operator");
-				    	} else {
-				    		addToPheno(operator + "(" + operand + ") ", TYPE_2);
-							prevArity = 0;
-							terms_seen = 0;
-				    	}
-				    } else {
-				    	String operator = null, operand = null;
-				    	if (terms_seen == 2) { 
-				    		operator = stack.pop();
-				    		operand = stack.pop();
-				    	} else {
-				    		operand = stack.pop();
-				    		operator = stack.pop();
-				    	}
-				    	if (!isOperator(operand) && !isOperator(operator)) {
-				    		// addToPheno(operand + " ", TYPE_5);
-				    		stack.push(operand);
-				    		stack.push(operator);
-				    		throw new Exception("Expected an operator");
-				    	} else {
-				    		addToPheno(operand + " " + operator + " ", TYPE_2);
-				    		prevArity = 0;
-				    		terms_seen = 0;
-				    	}
-				    }
-		    	} catch( Exception e ) {
-		    		System.out.println(e.getMessage());
-		    		if (stack.size() == 1) {
-		    			addToPheno(stack.pop(), TYPE_3);
-		    		}
-		    	}
-		    }  	
-		    updateStack(node);
-		}		
-	
-		handleEndOfStack();
-		this.calculateTreeDepth();
-		System.out.println("Pheno... DONE - depth[" + String.valueOf(this.TREE_DEPTH) +"] " + _pheno);
-		return _pheno;
+	stack.clear();
+	Stack<String> _stack;
+	StringBuilder pheno;
+	terms_seen = 0;
+	arity = 0;
+	prevLevel = 0;
+
+	for (TreeNode<String> node : this.tree) {
+	    pheno = _pheno;
+	    _stack = stack;
+	    System.out.println("Shit coont");
+	    return new StringBuilder("poop");
+	    // If we go back up a branch after recursion
+	    if (prevLevel > node.getLevel() && terms_seen == arity && stack.size() >= (1 + arity)) {
+		handleUpBranch();
+	    } 	    
+	    else if (terms_seen > 0 && isOperator(node.data)) { // terms on stack w/ non-term 
+	    	termsOnStackWithNonTerm();
+	    }  	
+	    updateStack(node);
+	}		
+
+	handleEndOfStack();
+	this.calculateTreeDepth();
+	System.out.println("Pheno... DONE - depth[" + String.valueOf(this.TREE_DEPTH) +"] " + _pheno);
+	return _pheno;
     }
 
     private void handleEndOfStack() {
-    	Stack<String> _stack = stack;
-		StringBuilder pheno = _pheno;
-		// Try and handle all combinations of an end of stack...
-		if (stack.size() > 0) {
-		    String rOp = stack.pop();
-		    try { 
-			if (stack.size() > 0 && isOperator(stack.peek())) {
-			    String op = stack.pop();
-			    if (getArityOfString(op) == 1) {
-			    	addToPheno(op + "(" + rOp + ")", TYPE_4);
-			    }
-			    else {
-			    	addToPheno(op + " " + rOp, TYPE_4);
-			    }
-			} else if (stack.size() > 0 && !isOperator(stack.peek())){
-			    String lOp = stack.pop(), op = stack.pop();
-			    addToPheno(lOp + " " + op + " " + rOp + " ", TYPE_4);
-			} else {
-			    addToPheno(rOp, TYPE_4);
-			}
-		    } catch (Throwable error) {
-		    	System.out.println(error.getMessage());
+	Stack<String> _stack = stack;
+	StringBuilder pheno = _pheno;
+	// Try and handle all combinations of an end of stack...
+	if (stack.size() > 0) {
+	    String rOp = stack.pop();
+	    try { 
+		if (stack.size() > 0 && isOperator(stack.peek())) {
+		    String op = stack.pop();
+		    if (getArityOfString(op) == 1) {
+			addToPheno(op + "(" + rOp + ")", TYPE_4);
 		    }
+		    else {
+			addToPheno(op + " " + rOp, TYPE_4);
+		    }
+		} else if (stack.size() > 0 && !isOperator(stack.peek())){
+		    String lOp = stack.pop(), op = stack.pop();
+		    addToPheno(lOp + " " + op + " " + rOp + " ", TYPE_4);
+		} else {
+		    addToPheno(rOp, TYPE_4);
 		}
+	    } catch (Throwable error) {
+		System.out.println(error.getMessage());
+	    }
+	}
 
     }
 
@@ -198,7 +195,7 @@ public class Genome<T> {
 	if (!isOperator(node.data)) {
 	    terms_seen++;
 	} else {
-	    prevArity = getArityOfFunction(node);
+	    arity = getArityOfFunction(node);
 	}
 	stack.push(node.data); // Push to stack
 	prevLevel = node.getLevel();
