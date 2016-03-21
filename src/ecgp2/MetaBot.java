@@ -129,7 +129,7 @@ public class MetaBot {
 			BufferedWriter out = new BufferedWriter(fstream);
 			out.write(sourceCode);
 			out.close();
-		}catch(Exception e){
+		} catch(Exception e){
 			System.err.println("Error: " + e.getMessage());
 		}
 		
@@ -138,6 +138,7 @@ public class MetaBot {
 			execute("javac -cp " + JARS + " " + PATH + "/" + botName + ".java");
 		}catch(Exception e){
 			e.printStackTrace();
+			System.exit(1);
 		}
 		return (PATH+"/"+botName+".class");
 	}
@@ -147,8 +148,10 @@ public class MetaBot {
 		printMsg(command + " stdout:", process.getInputStream());
 		printMsg(command + " stderr:", process.getErrorStream());
 		process.waitFor();
-		if(process.exitValue() != 0)
+		if(process.exitValue() != 0){
 			System.out.println(command + "exited with value " + process.exitValue());
+			throw new Exception("Incorrect GenomeToPhenome conversion, failed to compile bot");
+		}
 	}
 
 	private static void printMsg(String name, InputStream ins) throws Exception {
