@@ -118,7 +118,7 @@ class BattleObserver extends BattleAdaptor {
     robocode.BattleResults[] results;
 
     public void onBattleCompleted(BattleCompletedEvent e) {
-	results = e.getIndexedResults();
+    	results = e.getIndexedResults();
     }
 
     public void onBattleError(BattleErrorEvent e) {

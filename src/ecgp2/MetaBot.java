@@ -131,15 +131,17 @@ public class MetaBot {
 	    "\n		}" + 
 	    "\n 	public void onWin(WinEvent e) { " + 
 	    "\n 		fitness += 5.0;" +
+	    "\n			writeFitnessToFile(); "+ 
 	    "\n		}" + 
 	    "\n 	public void onDeath(DeathEvent e) { " +
 	    "\n			fitness -= 5.0;" + 
+	    "\n			writeFitnessToFile();" + 
 	    "\n		}" + 	
-	    "\n 	public void onRoundEnded(RoundEndedEvent e) { " +
+	    "\n		public void writeFitnessToFile() {" +
 	    "\n			PrintStream w = null; "+ 
 	    "\n			try { "+ 
 	    "\n 			w = new PrintStream(new RobocodeFileOutputStream(FITNESS_LOG_LOC, true)); "+
-	    "\n				w.append(String.valueOf(fitness)+\",\");	" + 
+	    "\n				w.append(\"foo\"+\",\");	" + 
 	    "\n				if (w.checkError()) { " +
 	    "\n					"+
 	    "\n 			} " + 
@@ -149,8 +151,8 @@ public class MetaBot {
 	    "\n 				if (w != null) { "+ 
 	    "\n						w.close(); "+ 
 	    "\n					} "+ 
-	    "\n				} "+ 
-	    "\n		}" + 	
+	    "\n				} "+
+	    "\n		}" + 
 	    "\n" +
 	    "\n" +	
 	    "\n}"
