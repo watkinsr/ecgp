@@ -1,4 +1,4 @@
-package GP_2016_03_23_07_20_10;
+package ecgp2;
 import robocode.*;
 import robocode.util.Utils;
 import java.awt.Color;
@@ -17,7 +17,7 @@ import java.io.Writer;
  import java.io.PrintStream;
  import robocode.AdvancedRobot; 
  import robocode.RobocodeFileOutputStream; 
-public class GP0 extends AdvancedRobot {
+public class GP_2016_03_23_07_20_10 extends AdvancedRobot {
 
  double fitness = 0.0 + -9.0; // Potential penalty here for tree growth
  FileWriter pw;
@@ -74,7 +74,6 @@ public class GP0 extends AdvancedRobot {
 			try { 
  			w = new PrintStream(new RobocodeFileOutputStream(FITNESS_LOG_LOC, true)); 
 				w.append(String.valueOf(fitness)+", sup jiggaboo");
-			
 				if (w.checkError()) { 
 					
  			} 
