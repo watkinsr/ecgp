@@ -1,7 +1,5 @@
 package ecgp2;
 
-import java.util.Random;
-
 public class Phenome {
 	public String[] phenomes = new String[5];
 	private static final int AMOUNT_PHENOMES = 5;

@@ -91,15 +91,19 @@ public class TreeNode<T> implements Iterable<TreeNode<T>> {
 		if (node.children.size() > 0) {	
 			this.children = cloner.deepClone(node.children);
 			this.children.get(0).parent = this;
-			this.children.get(1).parent = this;
+			if (node.children.size() == 2) {
+				this.children.get(1).parent = this;
+			}
 			this.elementsIndex.get(0).children.get(0).parent = this;
-			this.elementsIndex.get(0).children.get(1).parent = this;
+			if (node.children.size() == 2) {
+				this.elementsIndex.get(0).children.get(1).parent = this;
+			}
 		}
 	}
 	
 	public void recordTraversalStats(int target, List<Integer> selections) {
-		GP.log("Target: " + String.valueOf(target)); 
-		GP.log("Failed to locate a good node in our traversal...");
+		GP.Log("Target: " + String.valueOf(target)); 
+		GP.Log("Failed to locate a good node in our traversal...");
 		System.out.print("Failed to find node at target with traversal: "); 
 		for (int sel : selections) { System.out.print(sel); }
 		System.out.println("");
@@ -121,7 +125,7 @@ public class TreeNode<T> implements Iterable<TreeNode<T>> {
 				}
 			}
 		}
-		GP.log("Couldn't find candidates...");
+		GP.Log("Couldn't find candidates...");
 		target--;
 		
 		return getSubTreeTest(target, random);
@@ -176,17 +180,12 @@ public class TreeNode<T> implements Iterable<TreeNode<T>> {
 	}
 	
 	public TreeNode<T> getSubTreeFromMemory(List<Integer> selections) {
-		Cloner cloner = new Cloner();
 		TreeNode<T> subTree = this;
 		
 		if (selections.size() <= 0) {
 			System.out.println("ERROR: Selection size is less than or equal to zero");
 		}
-		else if (selections == null) {
-			Throwable e = new Throwable();
-			System.out.println("Error, bad arguments for getSubTreeFromMemory");
-			System.out.println(e.getStackTrace());
-		}
+
 		try { 
 			while (selections.size() > 0) {
 				int selection = selections.get(0);
@@ -198,7 +197,7 @@ public class TreeNode<T> implements Iterable<TreeNode<T>> {
 			System.out.println("ERROR: failed to loop through selections inside getSubTreeFromMemory");
 			System.out.println(e.getMessage());
 		}
-			GP.log("Random subTree found: "); subTree.print();
+			GP.Log("Random subTree found: "); subTree.print();
 			return subTree;
 	}
 	
@@ -231,7 +230,7 @@ public class TreeNode<T> implements Iterable<TreeNode<T>> {
 	}
 	
 	public void print() {
-		if (GP.DEBUG)
+		if (Genome.treeDisplay)
 			print("", true);
     }
 

@@ -5,10 +5,18 @@ import java.util.Random;
 import java.util.Stack;
 
 public class Genome<T> {
-	static String[] funcs = { "-", "+", "*", "/", "Math.sin"};
+	static String[] funcs = { "-", "+", "*", "/", "Math.sin", "Math.cos", "Math.toDegrees", "Math.asin", 
+			"Math.acos",  "Math.abs", "Math.toRadians"};
 	// static String[] terms = {"1", "2"};
-	static String[] terms = { "getX()", "getY()", "getVelocity()", "getGunHeading()", "getGunHeat()", "getHeading()" };
-	public static final int MAX_DEPTH = 4;
+	static String[] terms = { 
+			"getX()", "getY()", "getVelocity()", "getHeading()", "0.01", "Math.random()*2 - 1", 
+			"Math.random()+0.01", "Math.PI", "Math.floor((Math.random()*10))",
+			"getHeadingRadians()",  "getRadarHeadingRadians()", "e.getVelocity()", "e.getHeadingRadians()", 
+			"e.getEnergy()", "e.getDistance()", "e.getBearingRadians()", "getWidth()", "getHeight()", 
+			"getGunHeadingRadians()", "getDistanceRemaining()", "getGunTurnRemainingRadians()", 
+			"getRadarTurnRemainingRadians()"
+	};
+	public static final int MAX_DEPTH = 7;
 	public static final int MIN_DEPTH = 2;
 	private static final double PROB_TERM = 0.2;
 	public StringBuilder _pheno = new StringBuilder(" ");
@@ -20,24 +28,31 @@ public class Genome<T> {
 	private String oneArityStr;
 	private boolean recursedArityParent = false;
 	private boolean nodeUsed = false;
-	private int brasOpen = 0;
 	private ArrayList<Tuple> unaryDepths = new ArrayList<Tuple>();
 	private TreeNode<String> temp = null;
+	public int nodes = 0;
+	public static boolean logConversion = false;
+	public static boolean treeDisplay = false;
 	
 	public Genome() {
 		this.tree = new TreeNode<String>(func());
 		this.tree = Grow(this.tree);
-		// this.tree.print();
+		if (treeDisplay) {
+			this.tree.print();
+		}
 	}
 
 	public StringBuilder GetPhenomeFromGenome() {
 		return GenomeToPhenome();
 	}
 
+	
+	
 	public TreeNode<String> Grow(TreeNode<String> node) {
+		Random rand = new Random();
 		int arity = getArityOfFunction(node);
 		if (node.getLevel() < MAX_DEPTH) { // Terminal growth
-			if (Math.random() < PROB_TERM) {
+			if (rand.nextDouble() < PROB_TERM) {
 				TreeNode<String> childNode = node.addChild(term());
 				childNode.setNodeType("T");
 				if (node.children.size() < arity) {
@@ -64,7 +79,7 @@ public class Genome<T> {
 
 	private void addToPheno(String arg, int type) {
 		_pheno.append(arg);
-		System.out.println("Appended: " + arg + " [" + String.valueOf(type) + "]");
+		log("Appended: " + arg + " [" + String.valueOf(type) + "]", true);
 	}
 
 	private void recursiveUnary() {
@@ -119,7 +134,6 @@ public class Genome<T> {
 	}
 	
 	private void termsOnStackWithNonTerm(TreeNode<String> node) {
-		
 		try {
 			if (arity == 1 && stack.size() > 1) { // Unary
 				String operand = stack.pop(), operator = stack.pop();
@@ -170,71 +184,19 @@ public class Genome<T> {
 	}
 
 	private void printPrefixTree() {
-		System.out.println("");
-		System.out.print("[");
+		log("", false);
+		log("[", false);
 		for (TreeNode<String> node : this.tree) {
-			System.out.print(node.data + ", ");
+			log(node.data + ", ", false);
 		}
-		System.out.print("]");
-		System.out.println("");
-	}
-
-	private String NodeEval(TreeNode<String> node) {
-		for (TreeNode<String>child : node.children) {
-			//
-		}
-		return "";
+		log("]", false);
+		log("", false);
 	}
 	
-	private StringBuilder PreTreeToInfixString() {
-		stack.clear(); terms_seen = 0; arity = 0; prevLevel = 0; nodeUsed = false;
-		this.tree.print();
-		printPrefixTree();
 		
-		for (TreeNode<String> node : this.tree) {
-			if (!isOperator(node.data)) {
-				// nodeEval(node.data)
-			} else {
-				for (TreeNode<String>child : node.children) {
-					// return nodeEval(child);
-				}
-				TreeNode<String> left; TreeNode<String> right = node.children.get(1);
-				// return NodeEval(node.children.get(0)) + node.data + NodeEval(node.children.get(1));
-			}
-		}
-		return _pheno;
-	}
-	
-	private StringBuilder GenomeToPhenomeTest() {
-		return PreTreeToInfixString();
-	}
-	
-	private void processBranch(TreeNode<String> root) {
-		Stack<String> s = new Stack<String>();
-		for (TreeNode<String> node : root) {
-			if (node.getLevel() < prevLevel && !node.isLeaf()) {
-				// Process existing branch and start new one
-				printStack(s);
-				System.out.println("Reached end of branch");
-			}
-			else { // Keep going
-				s.push(node.data);
-			}
-			prevLevel = node.getLevel();
-		}
-		
-	}
-	
 	private void AddToDepths() {
 		for (int i = 0; i < unaryDepths.size(); i++) {
 			unaryDepths.get(i).x = (Object) ((int) unaryDepths.get(i).x + 1);
-		}
-		if (unaryDepths.size() > 0) {
-			// System.out.print("Depths:");
-			for (int i = 0; i < unaryDepths.size(); i++) {
-				// System.out.print(unaryDepths.get(i).x + ", ");
-			}
-		// 	System.out.println("");
 		}
 	}
 	
@@ -271,8 +233,16 @@ public class Genome<T> {
 		}
 	}
 	
+	private void log(String msg, boolean isNewLine) {
+		if (Genome.logConversion && isNewLine) {
+			System.out.println(msg);
+		} else if (Genome.logConversion) {
+			System.out.print(msg);
+		}
+	}
+	
 	private void PreTreeToString(TreeNode<String> child) {
-		System.out.print("TOADD[" + child.data + "] ");
+		log("TOADD[" + child.data + "] ", false);
 		if (prevLevel < child.getLevel() ) { AddToDepths(); } // we traversed down a bit further
 		
 		if (prevLevel > child.getLevel() && terms_seen == arity && stack.size() >= (1 + arity)) {
@@ -291,8 +261,9 @@ public class Genome<T> {
 			// nodeUsed = true;
 		}
 		
-		if (EvalUnaryCheck(child))
-			System.out.println("Unary eval'd true");
+		if (EvalUnaryCheck(child)) {
+			// System.out.println("Unary eval'd true");
+		}
 		
 		if (!nodeUsed) {updateStack(child);}
 		
@@ -304,6 +275,7 @@ public class Genome<T> {
 	
 	private void evaluation() {
 		for (TreeNode<String> child: this.tree) {
+			nodes++;
 			nodeUsed = false;
 			temp = child;
 			printStack(stack);
@@ -329,13 +301,16 @@ public class Genome<T> {
 	}
 	
 	private StringBuilder GenomeToPhenome() {
+		nodes = 0;
 		stack.clear();
 		terms_seen = 0;
 		arity = 0;
 		prevLevel = 0;
 		nodeUsed = false;
-		this.tree.print();
-		System.out.println("BEGIN");
+		if (logConversion) {
+			this.tree.print();
+		}
+		log("BEGIN", false);
 		printPrefixTree();
 		unaryDepths.clear();
 		
@@ -362,8 +337,10 @@ public class Genome<T> {
 		handleEndOfStack(stack);
 		ClearDepthBrackets();
 		this.calculateTreeDepth();
-		System.out.println("Pheno... DONE - depth[" + String.valueOf(this.TREE_DEPTH) + "] " + _pheno);
-		this.tree.print();
+		log("Pheno... DONE - depth[" + String.valueOf(this.TREE_DEPTH) + "] " + _pheno, true);
+		if (logConversion) {
+			this.tree.print();
+		}
 		if (stack.size() > 0) {
 			System.out.println("The stack should be empty, ERROR!");
 			System.exit(1);
@@ -372,16 +349,16 @@ public class Genome<T> {
 	}
 
 	private void printStack(Stack<String>stack) {
-		System.out.print(" STACK [");
+		log(" STACK [", false);
 		for (String str : stack) {
-			System.out.print(str + ",");
+			log(str + ",", false);
 		}
-		System.out.print("]\n");
+		log("]\n", false);
 	}
 	
 	private void handleEndOfStack(Stack<String>stack) {
 		// Try and handle all combinations of an end of stack...
-		System.out.print("End of stack"); printStack(stack);
+		log("End of stack", true); printStack(stack);
 		if (stack.size() > 0) {
 			String rOp = stack.pop();
 			try {
@@ -413,7 +390,7 @@ public class Genome<T> {
 				System.exit(1);
 			}
 		} else {
-			System.out.println("No items at end of stack");
+			log("No items at end of stack", true);
 		}
 
 	}
@@ -436,7 +413,7 @@ public class Genome<T> {
 		this.TREE_DEPTH = LOCAL_TREE_DEPTH;
 		// GP.log("Tree depth calculated: " + String.valueOf(TREE_DEPTH));
 		if (TREE_DEPTH < 1) {
-			GP.log("Error: We're encountering too little depth");
+			GP.Log("Error: We're encountering too little depth");
 		}
 	}
 
@@ -466,7 +443,8 @@ public class Genome<T> {
 	}
 
 	public static int getArityOfString(String s) {
-		if (s == "Math.sin") {
+		if (s == "Math.sin" || s == "Math.cos" || s == "Math.toDegrees" || s == "Math.asin" || 
+			s == "Math.acos" || s == "Math.abs" || s == "Math.toRadians") {
 			return 1;
 		} else {
 			return 2;
@@ -474,7 +452,9 @@ public class Genome<T> {
 	}
 
 	public static boolean isOperator(String c) {
-		return c == "+" || c == "-" || c == "*" || c == "/" || c == "Math.sin" || c == "Math.cos";
+		return c == "+" || c == "-" || c == "*" || c == "/" || c == "Math.sin" || c == "Math.cos" 
+				|| c == "Math.toDegrees" || c == "Math.asin" || c == "Math.acos" || c == "Math.abs" || 
+				c == "Math.toRadians";
 	}
 
 	public static double eval(final String str) {
