@@ -1,0 +1,4 @@
+* Description
+Presumably some sort of Robocode executable must be present inside bin.
+
+This is a project to evolve a given robocode robot for optimal fitness using GP algorithms.
